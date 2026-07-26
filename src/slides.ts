@@ -47,8 +47,8 @@ export const SLIDES: SlideData[] = [
 ];
 
 export const DEFAULT_FONT: FontId = "minimal";
-export const DEFAULT_SURFACE: SurfaceId = "pastel";
-export const DEFAULT_ACCENT: AccentId = "violet";
+export const DEFAULT_SURFACE: SurfaceId = "nord";
+export const DEFAULT_ACCENT: AccentId = "blue";
 export const DEFAULT_PURPOSE: PurposeId = "carousel";
 export const DEFAULT_BG: BgType = "blobs";
 export const DEFAULT_FORMAT: FormatId = "tiktok-9x16";

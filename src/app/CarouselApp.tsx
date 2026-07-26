@@ -1814,6 +1814,17 @@ const LIB_KEY = "qsc-library";
 const CURRENT_KEY = "qsc-current";
 const PROJECTS_KEY = "qsc-projects";
 const ACTIVE_KEY = "qsc-active-id";
+const STYLE_KEY = "qsc-style";
+
+// Style is global (shared across every project), not per-carousel — matching
+// how it behaves today. Each field falls back to its DEFAULT_* constant if
+// missing, so adding a new field here later never breaks an older save.
+type SavedStyle = {
+  fontId?: FontId;
+  surfaceId?: SurfaceId;
+  accentId?: AccentId;
+  bgType?: BgType;
+};
 
 type LibraryEntry = { name: string; savedAt: number; slides: SlideData[] };
 type Metrics = { views?: number; saves?: number; comments?: number; postedAt?: number };
@@ -2141,6 +2152,31 @@ export default function CarouselPage() {
   const [purposeId, setPurposeId] = useState<PurposeId>(DEFAULT_PURPOSE);
   const [formatId, setFormatId] = useState<FormatId>(DEFAULT_FORMAT);
   const [bgType, setBgType] = useState<BgType>(DEFAULT_BG);
+
+  // Restore the last-used style once, after hydration (avoids an SSR mismatch —
+  // the server always renders the DEFAULT_* values, localStorage only exists
+  // client-side). Runs once: `hydrated` flips true→ only, never back.
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const raw = localStorage.getItem(STYLE_KEY);
+      if (!raw) return;
+      const saved: SavedStyle = JSON.parse(raw);
+      if (saved.fontId) setFontId(saved.fontId);
+      if (saved.surfaceId) setSurfaceId(saved.surfaceId);
+      if (saved.accentId) setAccentId(saved.accentId);
+      if (saved.bgType) setBgType(saved.bgType);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  // Persist on every change so a reload keeps whatever was last picked.
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STYLE_KEY, JSON.stringify({ fontId, surfaceId, accentId, bgType }));
+    } catch {}
+  }, [hydrated, fontId, surfaceId, accentId, bgType]);
   const [fontScale, setFontScale] = useState<number>(1.0);
   const [slideScales, setSlideScales] = useState<Record<number, number>>({});
   const [slideAligns, setSlideAligns] = useState<Record<number, AlignT>>({});
