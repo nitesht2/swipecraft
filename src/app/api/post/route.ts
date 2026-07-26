@@ -8,7 +8,14 @@ import { join } from "path";
 const run = promisify(execFile);
 
 // Schedule / publish a carousel to social via the Postiz CLI.
-// Requirements (all on the machine running this dev server):
+//
+// DISABLED BY DEFAULT, and it must stay that way on anything publicly reachable.
+// This route publishes to the host's own connected social accounts, so an open
+// instance would let any caller post as the host. It only runs when ENABLE_POSTIZ
+// is set, which is meant for a local machine that nobody else can reach.
+//
+// Requirements (all on the machine running this server):
+//   - ENABLE_POSTIZ=1 in .env.local
 //   - `postiz` CLI installed and on PATH (npm i -g postiz)
 //   - POSTIZ_API_KEY set in .env.local
 //   - at least one channel connected in Postiz (TikTok, Instagram, etc.)
@@ -16,12 +23,24 @@ const run = promisify(execFile);
 
 const POSTIZ_BIN = process.env.POSTIZ_BIN || "postiz";
 
+function postizEnabled(): boolean {
+  const v = (process.env.ENABLE_POSTIZ || "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 async function postiz(args: string[], env: NodeJS.ProcessEnv) {
   const { stdout } = await run(POSTIZ_BIN, args, { env, maxBuffer: 1024 * 1024 * 16 });
   return stdout;
 }
 
 export async function POST(req: NextRequest) {
+  if (!postizEnabled()) {
+    return NextResponse.json(
+      { error: "Scheduling is disabled on this instance. It posts to the host's own social accounts, so it only runs locally with ENABLE_POSTIZ=1." },
+      { status: 403 }
+    );
+  }
+
   const apiKey = process.env.POSTIZ_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

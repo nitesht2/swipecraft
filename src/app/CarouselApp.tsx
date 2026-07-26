@@ -6,6 +6,7 @@ import type { SlideData, BgType, StylePreset, FontId, SurfaceId, AccentId, Purpo
 import { FONT_STYLES, SURFACES, ACCENTS, composePreset, FORMAT_PRESETS } from "../lib/presets";
 import { SLIDES, DEFAULT_FONT, DEFAULT_SURFACE, DEFAULT_ACCENT, DEFAULT_PURPOSE, DEFAULT_BG, DEFAULT_FORMAT } from "../slides";
 import { BRAND } from "../brand";
+import { loadUserKeys, saveUserKeys, maskKey, PROVIDERS, PROVIDER_LABEL, PROVIDER_HINT, PROVIDER_PLACEHOLDER, type UserKeys } from "../lib/userKeys";
 
 function BrandFooter({ preset }: { preset: StylePreset }) {
   if (!BRAND.showFooter) return null;
@@ -1971,6 +1972,35 @@ export default function CarouselPage() {
 
   // Schedule (Postiz) modal
   const [showSchedule, setShowSchedule] = useState(false);
+
+  // API keys, kept in this browser only. Empty on the server render so hydration matches.
+  const [showKeys, setShowKeys] = useState(false);
+  const [savedKeys, setSavedKeys] = useState<UserKeys>({});
+  const [keyDraft, setKeyDraft] = useState<UserKeys>({});
+  useEffect(() => { setSavedKeys(loadUserKeys()); }, []);
+  const openKeySettings = useCallback(() => {
+    setKeyDraft({});
+    setShowKeys(true);
+  }, []);
+  const commitKeys = useCallback(() => {
+    // A blank field leaves the stored key alone. Clearing is done per row.
+    const next: UserKeys = { ...savedKeys };
+    for (const p of PROVIDERS) {
+      const typed = keyDraft[p]?.trim();
+      if (typed) next[p] = typed;
+    }
+    saveUserKeys(next);
+    setSavedKeys(next);
+    setKeyDraft({});
+    setShowKeys(false);
+  }, [keyDraft, savedKeys]);
+  const clearKey = useCallback((p: (typeof PROVIDERS)[number]) => {
+    const next: UserKeys = { ...savedKeys };
+    delete next[p];
+    saveUserKeys(next);
+    setSavedKeys(next);
+    setKeyDraft((d) => ({ ...d, [p]: "" }));
+  }, [savedKeys]);
   const [scheduleCaption, setScheduleCaption] = useState("");
   const [scheduleWhen, setScheduleWhen] = useState("");
   const [scheduling, setScheduling] = useState(false);
@@ -1992,7 +2022,7 @@ export default function CarouselPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topic, keys: loadUserKeys() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -2016,7 +2046,7 @@ export default function CarouselPage() {
     setGenError("");
     setHookVariants(null);
     try {
-      const res = await fetch("/api/hooks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic }) });
+      const res = await fetch("/api/hooks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, keys: loadUserKeys() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setHookVariants(data.hooks);
@@ -2047,7 +2077,7 @@ export default function CarouselPage() {
     setImgLoading(true);
     setImgError("");
     try {
-      const res = await fetch("/api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+      const res = await fetch("/api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, keys: loadUserKeys() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setSlides((prev) => {
@@ -2428,6 +2458,9 @@ export default function CarouselPage() {
             </div>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={openKeySettings} title="API keys for AI generation" style={{ padding: "8px 16px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "transparent", color: "#2E2A24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} className="tb-btn">
+              🔑 Keys
+            </button>
             <button onClick={() => setShowStats(true)} title="View analytics across all carousels" style={{ padding: "8px 16px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "transparent", color: "#2E2A24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} className="tb-btn">
               📊 Stats
             </button>
@@ -2900,6 +2933,48 @@ export default function CarouselPage() {
       </div>
 
       {/* Schedule (Postiz) modal */}
+      {/* API key settings. Keys stay in this browser and are sent per request. */}
+      {showKeys && (
+        <div onClick={() => setShowKeys(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,23,20,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 560, maxWidth: "92vw", maxHeight: "85vh", overflowY: "auto", background: "#FBF8F2", border: "1px solid #E2DACB", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0, fontSize: 16, color: "#1A1714" }}>API keys</h3>
+              <button onClick={() => setShowKeys(false)} style={{ border: "none", background: "transparent", color: "#8A8378", fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: "#8A8378", lineHeight: 1.5 }}>
+              Your keys are stored in this browser and sent with each AI request so it runs on your own account. They are never saved on the server. Anyone with access to this browser profile can read them, so use a key you can revoke.
+            </p>
+            {PROVIDERS.map((p) => (
+              <label key={p} style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: "#8A8378" }}>
+                <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span>{PROVIDER_LABEL[p]}</span>
+                  {savedKeys[p] && (
+                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <code style={{ fontSize: 11, color: "#3F7A4F" }}>{maskKey(savedKeys[p]!)}</code>
+                      <button type="button" onClick={() => clearKey(p)} style={{ border: "none", background: "transparent", color: "#C2402A", fontSize: 11, cursor: "pointer", padding: 0 }}>Remove</button>
+                    </span>
+                  )}
+                </span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={keyDraft[p] ?? ""}
+                  onChange={(e) => setKeyDraft((d) => ({ ...d, [p]: e.target.value }))}
+                  placeholder={savedKeys[p] ? "Saved. Type to replace." : PROVIDER_PLACEHOLDER[p]}
+                  style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #D8D0C0", background: "#FFFFFF", color: "#1A1714", fontSize: 13, fontFamily: "ui-monospace, monospace" }}
+                />
+                <span style={{ fontSize: 11, color: "#A39A8C" }}>{PROVIDER_HINT[p]}</span>
+              </label>
+            ))}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button onClick={() => setShowKeys(false)} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #D8D0C0", background: "transparent", color: "#2E2A24", cursor: "pointer", fontSize: 13 }}>Cancel</button>
+              <button onClick={commitKeys} style={{ padding: "8px 22px", borderRadius: 8, border: "none", background: "#E5683C", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSchedule && (
         <div onClick={() => !scheduling && setShowSchedule(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,23,20,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: 520, maxWidth: "92vw", background: "#FBF8F2", border: "1px solid #E2DACB", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>

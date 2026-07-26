@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { noKeyMessage, readUserKeys, resolveKey, type UserKeys } from "@/lib/keys";
 
 // Returns 3 distinct hook-slide variants for A/B testing.
-// Reuses the same provider env as /api/generate (OpenRouter preferred, Anthropic fallback).
+// Same key resolution as /api/generate (OpenRouter preferred, Anthropic fallback).
 
 const SYSTEM = `You write scroll-stopping TikTok carousel HOOK slides for @quad_star (AI tools / prompts channel).
 
@@ -21,15 +22,15 @@ Rules:
 - Only claim facts present in the topic brief.
 - Return JSON ONLY. No fences. No commentary.`;
 
-async function call(topic: string): Promise<string> {
-  const orKey = process.env.OPENROUTER_API_KEY;
-  const antKey = process.env.ANTHROPIC_API_KEY;
+async function call(topic: string, userKeys: UserKeys): Promise<string> {
+  const orKey = resolveKey("openrouter", userKeys);
+  const antKey = resolveKey("anthropic", userKeys);
   const user = `Topic: ${topic}\n\nWrite the 3 hook variants.`;
   if (orKey) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${orKey}`, "HTTP-Referer": "http://localhost:3333", "X-Title": "swipecraft" },
-      body: JSON.stringify({ model: process.env.OPENROUTER_MODEL || "x-ai/grok-4.1-fast", max_tokens: 1500, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }] }),
+      body: JSON.stringify({ model: process.env.OPENROUTER_MODEL || "x-ai/grok-4.3", max_tokens: 1500, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }] }),
     });
     if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`);
     return (await res.json()).choices?.[0]?.message?.content || "";
@@ -43,16 +44,25 @@ async function call(topic: string): Promise<string> {
     if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
     return (await res.json()).content?.[0]?.text || "";
   }
-  throw new Error("No API key set. Add OPENROUTER_API_KEY or ANTHROPIC_API_KEY to .env.local.");
+  throw new Error(noKeyMessage(["openrouter", "anthropic"]));
 }
 
 export async function POST(req: NextRequest) {
   let topic = "";
-  try { topic = String((await req.json()).topic || "").trim(); } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
+  let body: unknown;
+  try {
+    body = await req.json();
+    topic = String((body as { topic?: unknown })?.topic || "").trim();
+  } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
   if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
 
+  const userKeys = readUserKeys(body);
+  if (!resolveKey("openrouter", userKeys) && !resolveKey("anthropic", userKeys)) {
+    return NextResponse.json({ error: noKeyMessage(["openrouter", "anthropic"]) }, { status: 400 });
+  }
+
   let raw = "";
-  try { raw = await call(topic); } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 }); }
+  try { raw = await call(topic, userKeys); } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 }); }
   raw = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
   try {

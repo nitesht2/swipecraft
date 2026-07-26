@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { noKeyMessage, readUserKeys, resolveKey } from "@/lib/keys";
 
-// Server-side LLM call — API keys never reach the browser.
-// Provider picked by env (.env.local), checked in this order:
-//   1. OPENROUTER_API_KEY  → OpenRouter (default model: x-ai/grok-4.1-fast, override with OPENROUTER_MODEL)
-//   2. ANTHROPIC_API_KEY   → Anthropic (claude-sonnet-4-6)
+// Server-side LLM call. Keys come from the caller's browser (BYOK) or, when
+// BYOK_ONLY is off, from .env.local. Provider order:
+//   1. OpenRouter (default model: x-ai/grok-4.3, override with OPENROUTER_MODEL)
+//   2. Anthropic (claude-sonnet-4-6)
 
 const BRAND_GUIDE = `
 Brand: @quad_star — TikTok channel for AI tools and prompts that save time.
@@ -51,7 +52,7 @@ Rules:
 - Return JSON ONLY. No markdown fences. No commentary.`;
 
 async function callOpenRouter(apiKey: string, topic: string): Promise<string> {
-  const model = process.env.OPENROUTER_MODEL || "x-ai/grok-4.1-fast";
+  const model = process.env.OPENROUTER_MODEL || "x-ai/grok-4.3";
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -95,24 +96,23 @@ async function callAnthropic(apiKey: string, topic: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const orKey = process.env.OPENROUTER_API_KEY;
-  const antKey = process.env.ANTHROPIC_API_KEY;
-  if (!orKey && !antKey) {
-    return NextResponse.json(
-      { error: "No API key set. Add OPENROUTER_API_KEY or ANTHROPIC_API_KEY to .env.local and restart the dev server." },
-      { status: 500 }
-    );
-  }
-
   let topic: string;
+  let body: unknown;
   try {
-    const body = await req.json();
-    topic = String(body.topic || "").trim();
+    body = await req.json();
+    topic = String((body as { topic?: unknown })?.topic || "").trim();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
   if (!topic) {
     return NextResponse.json({ error: "Topic is required" }, { status: 400 });
+  }
+
+  const userKeys = readUserKeys(body);
+  const orKey = resolveKey("openrouter", userKeys);
+  const antKey = resolveKey("anthropic", userKeys);
+  if (!orKey && !antKey) {
+    return NextResponse.json({ error: noKeyMessage(["openrouter", "anthropic"]) }, { status: 400 });
   }
 
   let raw: string;

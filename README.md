@@ -53,22 +53,51 @@ bun dev --port 3333
 # open http://localhost:3333
 ```
 
-Everything is editable in the browser. To enable the AI features, create `.env.local`:
+Everything is editable in the browser. To enable the AI features, copy `.env.example` to `.env.local` and fill in what you need:
+
+```bash
+cp .env.example .env.local
+```
 
 ```bash
 # AI text (pick one; OpenRouter is checked first)
 OPENROUTER_API_KEY=sk-or-...
-# OPENROUTER_MODEL=x-ai/grok-4.1-fast   # optional, this is the default
+# OPENROUTER_MODEL=x-ai/grok-4.3        # optional, this is the default
 # ANTHROPIC_API_KEY=sk-ant-...          # fallback if no OpenRouter key
 
 # AI images (optional — per-slide image gen)
 OPENAI_API_KEY=sk-...
 
-# Scheduling (optional — needs a running Postiz with a connected channel)
+# Scheduling (local only — see the warning below)
+ENABLE_POSTIZ=1
 POSTIZ_API_KEY=...
 ```
 
 Restart the dev server after editing `.env.local`. Without keys, the editor and all export features still work; only the AI/schedule buttons need them.
+
+You can also skip `.env.local` entirely and paste keys into the **🔑 Keys** panel in the app. Those live in your browser's localStorage, are sent with each request, and are never stored server-side. A key pasted there always wins over the one in `.env.local`.
+
+---
+
+## Hosting It For Other People
+
+Two settings decide whether this is safe to expose. Both matter.
+
+**`BYOK_ONLY=1`** — makes the server ignore its own AI keys completely, so every request must carry the caller's own key from the Keys panel. Without it, a public instance bills every visitor's generations to you.
+
+**Leave `ENABLE_POSTIZ` unset** — `/api/post` publishes to *your* connected social accounts. It is disabled by default and returns 403. Only turn it on for a local instance nobody else can reach. Never set it on a public deployment.
+
+```bash
+# Public deployment
+BYOK_ONLY=1
+# ENABLE_POSTIZ intentionally unset
+```
+
+There is still no per-user rate limiting, so put the deployment behind your host's rate limits or a proxy if you expect real traffic. Note also that BYOK means visitors send their key through your server on the way to the provider, so tell them whose instance they are trusting.
+
+Carousels are stored per browser in localStorage. There are no accounts and no database, so each visitor's projects stay on their own machine.
+
+**Mobile:** the editor layout is desktop-only right now. Phone users will land on a broken view.
 
 ---
 

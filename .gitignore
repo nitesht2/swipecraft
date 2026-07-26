@@ -8,3 +8,4 @@ build/
 graphify-out/
 node_modules/
 out/
+tsconfig.tsbuildinfo

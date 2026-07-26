@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { noKeyMessage, readUserKeys, resolveKey } from "@/lib/keys";
 
-// Generate an image for a carousel slide.
-// Requires OPENAI_API_KEY in .env.local (uses the gpt-image-1 model).
+// Generate an image for a carousel slide using gpt-image-1.
+// Key comes from the caller's browser (BYOK) or, when BYOK_ONLY is off, from .env.local.
 // Returns a base64 data URL the browser can drop straight into an <img> / image slide.
 
 export async function POST(req: NextRequest) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    return NextResponse.json(
-      { error: "OPENAI_API_KEY not set. Add it to .env.local and restart the dev server to use AI images." },
-      { status: 500 }
-    );
-  }
-
   let prompt = "";
-  try { prompt = String((await req.json()).prompt || "").trim(); } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
+  let body: unknown;
+  try {
+    body = await req.json();
+    prompt = String((body as { prompt?: unknown })?.prompt || "").trim();
+  } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
   if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+
+  const key = resolveKey("openai", readUserKeys(body));
+  if (!key) {
+    return NextResponse.json({ error: noKeyMessage(["openai"]) }, { status: 400 });
+  }
 
   // Nudge toward a clean, brand-consistent illustration look
   const styled = `${prompt}. Flat modern vector illustration, soft pastel lavender palette, minimal, lots of negative space, no text in the image.`;
