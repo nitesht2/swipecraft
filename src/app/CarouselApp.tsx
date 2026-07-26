@@ -2426,7 +2426,14 @@ export default function CarouselPage() {
     const orientation = isLandscape ? "landscape" : "portrait";
     const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF({ orientation, unit: "px", format: [canvasW, canvasH], hotfixes: ["px_scaling"] });
-    const jpegOpts = { width: canvasW, height: canvasH, pixelRatio: 2, cacheBust: true, backgroundColor: preset.bg, quality: 0.92 };
+    // skipFonts matches captureSlide's proven pattern above: the browser has
+    // already painted these slides with their fonts loaded, so html-to-image
+    // doesn't need to re-fetch and re-embed every font file per slide. Cuts
+    // real, wasted work regardless of environment; it is not a full fix for
+    // multi-minute exports seen under some browser extensions (ad blockers,
+    // privacy/canvas-fingerprint tools), which can still throttle the canvas
+    // rasterization itself — that is environment-specific, not fixable here.
+    const jpegOpts = { width: canvasW, height: canvasH, pixelRatio: 2, cacheBust: true, backgroundColor: preset.bg, quality: 0.92, skipFonts: true };
 
     const tl = T[langRef.current];
     for (let i = 0; i < slides.length; i++) {
@@ -2448,11 +2455,17 @@ export default function CarouselPage() {
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    pdf.save("slides.pdf");
+    // Distinct per project + date so repeated exports don't collide as
+    // "slides.pdf", "slides (1).pdf", "slides (2).pdf" with no way to tell
+    // them apart — that was silently producing duplicate-looking downloads.
+    const d = new Date();
+    const dateStamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    const slug = (activeProject?.name || "carousel").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "carousel";
+    pdf.save(`${slug}-${dateStamp}.pdf`);
     setExportStatus(T[langRef.current].statusDone);
     setExporting(false);
     setTimeout(() => setExportStatus(""), 2000);
-  }, [preset.bg, canvasW, canvasH, slides]);
+  }, [preset.bg, canvasW, canvasH, slides, activeProject]);
 
   return (
     <CanvasSizeContext.Provider value={{ w: canvasW, h: canvasH }}>
