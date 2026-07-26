@@ -43,7 +43,7 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Quad Studio — Carousel Maker",
+  title: "Swipecraft — Carousel Maker",
 };
 
 export default function RootLayout({

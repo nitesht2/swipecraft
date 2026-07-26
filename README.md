@@ -1,4 +1,4 @@
-# Quad Studio
+# Swipecraft
 
 > A short-form carousel studio for TikTok / Instagram Reels / YouTube Shorts. Platform-safe layout, tabbed in-browser editor, per-slide typography + alignment, AI content generation, carousel library, and one-click ZIP export.
 
@@ -12,7 +12,7 @@ Built for [@quad_star](https://www.tiktok.com/@quad_star) — AI tools and promp
 
 ## What This Is
 
-**Quad Studio** is a self-hosted carousel editor. It started as a fork of [itchernetski/threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill) (MIT) and has been substantially extended into its own tool:
+**Swipecraft** is a self-hosted carousel editor. It started as a fork of [itchernetski/threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill) (MIT) and has been substantially extended into its own tool:
 
 **In-browser editing (no code required)**
 - **Project sidebar** — every carousel is a named project: create, switch, duplicate, rename, delete, mark as posted. Autosaved to localStorage.
@@ -46,8 +46,8 @@ Built for [@quad_star](https://www.tiktok.com/@quad_star) — AI tools and promp
 ## Quick Start
 
 ```bash
-git clone https://github.com/nitesht2/quad-star-carousels.git
-cd quad-star-carousels
+git clone https://github.com/nitesht2/swipecraft.git
+cd swipecraft
 bun install
 bun dev --port 3333
 # open http://localhost:3333
@@ -244,7 +244,7 @@ bun run build                 # production build
 ## Project Structure
 
 ```
-quad-star-carousels/
+swipecraft/
 ├── src/
 │   ├── app/
 │   │   ├── CarouselApp.tsx       # main render engine — toolbar, slides, export
@@ -281,9 +281,9 @@ quad-star-carousels/
 
 ## Credits & Attribution
 
-Quad Studio is built on the shoulders of open source. With gratitude:
+Swipecraft is built on the shoulders of open source. With gratitude:
 
-- **Original rendering engine:** [itchernetski/threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill) by itchernetski (MIT License). The slide-rendering core, preset system, and html-to-image export pipeline originate from this project. Quad Studio extends it with the tabbed editor, click-to-edit panel, carousel library, AI generation API route, safe-zone overlay, per-slide controls, and the Quad Studio visual identity.
+- **Original rendering engine:** [itchernetski/threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill) by itchernetski (MIT License). The slide-rendering core, preset system, and html-to-image export pipeline originate from this project. Swipecraft extends it with the tabbed editor, click-to-edit panel, carousel library, AI generation API route, safe-zone overlay, per-slide controls, and the Swipecraft visual identity.
 - **AI generate UX inspiration:** [FranciscoMoretti/carousel-generator](https://github.com/FranciscoMoretti/carousel-generator)
 - **Design rules applied:** [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
 - **Illustration style reference:** [helloianneo/ian-xiaohei-illustrations](https://github.com/helloianneo/ian-xiaohei-illustrations)
@@ -292,7 +292,7 @@ Quad Studio is built on the shoulders of open source. With gratitude:
 
 ## License
 
-MIT. The original engine is MIT-licensed and that license is preserved in [`LICENSE`](./LICENSE). Quad Studio's additions are also released under MIT. Fork it, ship it.
+MIT. The original engine is MIT-licensed and that license is preserved in [`LICENSE`](./LICENSE). Swipecraft's additions are also released under MIT. Fork it, ship it.
 
 ---
 

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "threads-carousel",
+      "name": "swipecraft",
       "dependencies": {
         "html-to-image": "^1.11.11",
         "jspdf": "^4.2.1",

@@ -1741,7 +1741,7 @@ type Lang = "en" | "ru";
 
 const T = {
   en: {
-    appTitle: "Quad Studio",
+    appTitle: "Swipecraft",
     rowFont: "Font",
     rowSurface: "Surface",
     rowAccent: "Accent",
@@ -1771,7 +1771,7 @@ const T = {
     } as Record<AccentId, string>,
   },
   ru: {
-    appTitle: "Quad Studio",
+    appTitle: "Swipecraft",
     rowFont: "Шрифт",
     rowSurface: "Фон",
     rowAccent: "Акцент",
@@ -2419,7 +2419,7 @@ export default function CarouselPage() {
         {/* Title + Export + Lang toggle */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: "#E5683C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, fontFamily: "var(--font-playfair)" }}>Q</div>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: "#E5683C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, fontFamily: "var(--font-playfair)" }}>S</div>
             <div>
               <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: "-0.02em", color: "#1A1714" } as React.CSSProperties}>{t.appTitle}</h1>
               <div style={{ fontSize: 11, color: "#8A8378", marginTop: 2 }}>

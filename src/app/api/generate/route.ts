@@ -58,7 +58,7 @@ async function callOpenRouter(apiKey: string, topic: string): Promise<string> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
       "HTTP-Referer": "http://localhost:3333",
-      "X-Title": "quad-star-carousels",
+      "X-Title": "swipecraft",
     },
     body: JSON.stringify({
       model,

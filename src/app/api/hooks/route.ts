@@ -28,7 +28,7 @@ async function call(topic: string): Promise<string> {
   if (orKey) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${orKey}`, "HTTP-Referer": "http://localhost:3333", "X-Title": "quad-studio" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${orKey}`, "HTTP-Referer": "http://localhost:3333", "X-Title": "swipecraft" },
       body: JSON.stringify({ model: process.env.OPENROUTER_MODEL || "x-ai/grok-4.1-fast", max_tokens: 1500, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }] }),
     });
     if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`);
