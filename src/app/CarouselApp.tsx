@@ -1764,7 +1764,9 @@ const T = {
     surfaces: {
       dark: "Dark", white: "White", light: "Light", paper: "Paper",
       gradient: "Gradient", pastel: "Pastel", neon: "Neon", ember: "Ember",
-    } as Record<SurfaceId, string>,
+      // Palette names are proper nouns, so they stay untranslated in every locale.
+      mocha: "Mocha", latte: "Latte", rosepine: "Rosé Pine", nord: "Nord",
+    } satisfies Record<SurfaceId, string>,
     accents: {
       yellow: "Yellow", red: "Red", teal: "Teal", coral: "Coral",
       orange: "Orange", violet: "Violet", lime: "Lime", blue: "Blue",
@@ -1794,7 +1796,8 @@ const T = {
     surfaces: {
       dark: "Тёмный", white: "Белый", light: "Светлый", paper: "Бумага",
       gradient: "Градиент", pastel: "Пастель", neon: "Неон", ember: "Уголь",
-    } as Record<SurfaceId, string>,
+      mocha: "Mocha", latte: "Latte", rosepine: "Rosé Pine", nord: "Nord",
+    } satisfies Record<SurfaceId, string>,
     accents: {
       yellow: "Жёлтый", red: "Красный", teal: "Бирюза", coral: "Коралл",
       orange: "Оранж", violet: "Фиолет", lime: "Лайм", blue: "Синий",

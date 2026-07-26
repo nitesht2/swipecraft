@@ -50,7 +50,12 @@ export type SurfaceId =
   | "gradient"
   | "pastel"
   | "neon"
-  | "ember";
+  | "ember"
+  // Adapted from open-source palettes (MIT): Catppuccin, Rosé Pine, Nord.
+  | "mocha"
+  | "latte"
+  | "rosepine"
+  | "nord";
 
 /** Accent — the pop color used for highlighted words. */
 export type AccentId =

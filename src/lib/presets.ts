@@ -137,6 +137,47 @@ export const SURFACES: Record<SurfaceId, Surface> = {
     textSecondary: "rgba(245,245,244,0.55)",
     accentColor: "#F5F5F4",
   },
+
+  // ---- Surfaces adapted from open-source palettes (all MIT). ----
+  // Values are the palettes' own published roles, mapped onto this shape:
+  // base -> bg, text -> textColor, the muted/subtext role -> textSecondary.
+
+  // catppuccin/catppuccin — Mocha
+  mocha: {
+    id: "mocha",
+    name: "Mocha",
+    bg: "#1E1E2E",
+    textColor: "#CDD6F4",
+    textSecondary: "rgba(205,214,244,0.55)",
+    accentColor: "#CBA6F7",
+  },
+  // catppuccin/catppuccin — Latte, the light counterpart
+  latte: {
+    id: "latte",
+    name: "Latte",
+    bg: "#EFF1F5",
+    textColor: "#4C4F69",
+    textSecondary: "rgba(76,79,105,0.55)",
+    accentColor: "#8839EF",
+  },
+  // rose-pine/rose-pine-palette — main
+  rosepine: {
+    id: "rosepine",
+    name: "Rosé Pine",
+    bg: "#191724",
+    textColor: "#E0DEF4",
+    textSecondary: "rgba(224,222,244,0.55)",
+    accentColor: "#EB6F92",
+  },
+  // nordtheme/nord — polar night base, snow storm text, frost accent
+  nord: {
+    id: "nord",
+    name: "Nord",
+    bg: "#2E3440",
+    textColor: "#ECEFF4",
+    textSecondary: "rgba(236,239,244,0.55)",
+    accentColor: "#88C0D0",
+  },
 };
 
 // ---- Accents: the pop color used for highlighted words ----
