@@ -1911,6 +1911,44 @@ export default function CarouselPage() {
     setSlides(p.slides);
   }, []);
 
+  // Carousels handed over by the MCP server. Polled so one written mid-session shows up
+  // without a reload; silently no-ops when the inbox route is disabled.
+  type InboxItem = { id: string; name: string; slides: SlideData[]; createdAt: number };
+  const [inbox, setInbox] = useState<InboxItem[]>([]);
+  const refreshInbox = useCallback(async () => {
+    try {
+      const res = await fetch("/api/inbox");
+      if (!res.ok) return setInbox([]);
+      const data = await res.json();
+      setInbox(Array.isArray(data.carousels) ? data.carousels : []);
+    } catch {
+      setInbox([]);
+    }
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    refreshInbox();
+    const t = setInterval(refreshInbox, 15000);
+    return () => clearInterval(t);
+  }, [hydrated, refreshInbox]);
+
+  const importFromInbox = useCallback(async (item: InboxItem) => {
+    const p: Project = {
+      id: `p-${Date.now()}`,
+      name: item.name,
+      status: "draft",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      slides: item.slides,
+    };
+    setProjects((prev) => [p, ...prev]);
+    setActiveId(p.id);
+    setSlides(p.slides);
+    // Drop it from the inbox only after it is safely in local state.
+    try { await fetch(`/api/inbox?id=${encodeURIComponent(item.id)}`, { method: "DELETE" }); } catch {}
+    setInbox((prev) => prev.filter((i) => i.id !== item.id));
+  }, []);
+
   const duplicateProject = useCallback((id: string) => {
     setProjects((prev) => {
       const src = prev.find((p) => p.id === id);
@@ -2392,6 +2430,27 @@ export default function CarouselPage() {
             style={{ width: 26, height: 26, borderRadius: 7, border: "none", background: "#E5683C", color: "#fff", cursor: "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1 }}
           >+</button>
         </div>
+
+        {inbox.length > 0 && (
+          <div style={{ border: "1px solid #E5683C", borderRadius: 10, padding: 10, display: "flex", flexDirection: "column", gap: 8, background: "#FFF4EF" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#E5683C", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              From Claude · {inbox.length}
+            </span>
+            {inbox.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => importFromInbox(item)}
+                className="tb-btn"
+                title={`Import "${item.name}" as a new project`}
+                style={{ textAlign: "left", padding: "7px 9px", borderRadius: 7, border: "1px solid #E2DACB", background: "#fff", cursor: "pointer" }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#1A1714" }}>{item.name}</div>
+                <div style={{ fontSize: 10, color: "#8A8378", marginTop: 2 }}>{item.slides.length} slides · click to import</div>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {projects.map((p) => {
             const isActive = p.id === activeId;
