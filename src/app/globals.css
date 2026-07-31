@@ -149,3 +149,46 @@ body {
     flex: 1 1 calc(50% - 4px);
   }
 }
+
+/* ============================================================
+   Per-slide toolbars
+   ------------------------------------------------------------
+   The strips sit on top of the slide artwork, so they stay
+   hidden until you actually address that card. They never reach
+   an export: exports capture separate offscreen copies of each
+   slide that contain no chrome.
+   ============================================================ */
+
+.slide-tools {
+  opacity: 0;
+  /* Invisible controls must not be clickable, or you hit a button
+     you cannot see. Keyboard focus still works — pointer-events
+     does not affect tab order, which is what :focus-within needs. */
+  pointer-events: none;
+  transition: opacity 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.slide-shell:hover .slide-tools,
+.slide-shell:focus-within .slide-tools {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch screens have no hover, so revealing on hover would hide the
+   controls permanently. Show them, and give every button a real
+   thumb target — the desktop buttons are 28px, well under the 44px
+   minimum. */
+@media (hover: none) {
+  .slide-tools {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .slide-tools button {
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-tools { transition: none; }
+}

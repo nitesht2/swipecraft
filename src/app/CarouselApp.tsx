@@ -2870,7 +2870,7 @@ export default function CarouselPage() {
         }}
       >
         {slides.map((slide, i) => (
-          <div key={i} style={{ position: "relative" }}>
+          <div key={i} className="slide-shell" style={{ position: "relative" }}>
             <div className="slide-card">
               <FontScaleContext.Provider value={fontScale * (slideScales[i] ?? 1.0)}>
                 <SlideAlignContext.Provider value={slideAligns[i] ?? "center"}>
@@ -2890,6 +2890,7 @@ export default function CarouselPage() {
               </FontScaleContext.Provider>
             </div>
             <div
+              className="slide-tools"
               style={{
                 position: "absolute",
                 top: 8,
@@ -2901,7 +2902,6 @@ export default function CarouselPage() {
                 borderRadius: 8,
                 boxShadow: "0 2px 8px rgba(26,23,20,0.12)",
                 zIndex: 5,
-                opacity: 0.85,
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2965,6 +2965,7 @@ export default function CarouselPage() {
 
             {/* Structural ops strip (bottom-left of each slide) */}
             <div
+              className="slide-tools"
               onClick={(e) => e.stopPropagation()}
               style={{
                 position: "absolute",
