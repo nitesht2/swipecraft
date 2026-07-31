@@ -55,3 +55,97 @@ body {
   transition-duration: 0.3s;
   transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* ============================================================
+   Responsive shell — mobile / PWA
+   ------------------------------------------------------------
+   The app shell is built from inline style objects, which cannot
+   carry media queries and always beat plain class selectors on
+   specificity. So the mobile overrides below need !important to
+   land. Keep this block the single place that knows about small
+   screens; do not add width logic back into the JSX.
+   ============================================================ */
+
+/* Drawer toggle + backdrop are desktop-hidden by default. */
+.sc-menu-btn { display: none; }
+.sc-backdrop { display: none; }
+
+@media (max-width: 900px) {
+  /* Sidebar leaves the flex flow and becomes an overlay drawer, so the
+     editor gets the full viewport width instead of 127px. */
+  .sc-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    height: 100dvh !important;
+    width: min(288px, 84vw) !important;
+    /* Clear the fixed toggle, which otherwise sits on top of the Projects heading. */
+    padding-top: 64px !important;
+    transform: translateX(-100%);
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 0 40px rgba(26, 23, 20, 0.22);
+    overscroll-behavior: contain;
+  }
+  .sc-sidebar[data-open="true"] { transform: translateX(0); }
+
+  .sc-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(26, 23, 20, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .sc-backdrop[data-open="true"] { opacity: 1; pointer-events: auto; }
+
+  .sc-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 61;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid #E2DACB;
+    background: #FBF8F2;
+    color: #1A1714;
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(26, 23, 20, 0.12);
+  }
+
+  /* Clear the fixed toggle, and drop the desktop 32px gutter. */
+  .sc-main { padding: 64px 14px 28px !important; }
+
+  /* Title row and action buttons wrap instead of overflowing off-screen. */
+  .sc-titlebar { flex-wrap: wrap; gap: 12px !important; }
+  .sc-actions {
+    margin-left: 0 !important;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .sc-actions > button { flex: 1 1 auto; min-width: 0; }
+
+  /* Label rows stack: the 90px fixed label + input + 2 buttons cannot fit 375px. */
+  .sc-genrow { flex-wrap: wrap; }
+  .sc-genrow > span { width: auto !important; }
+
+  /* An off-canvas drawer sits at translateX(-100%). Without this the page
+     still counts it and gains a phantom horizontal scrollbar. */
+  html, body { overflow-x: hidden; }
+}
+
+/* Phone-sized: give every control a thumb-friendly hit target. */
+@media (max-width: 560px) {
+  .sc-actions > button {
+    min-height: 44px !important;
+    flex: 1 1 calc(50% - 4px);
+  }
+}

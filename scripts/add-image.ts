@@ -4,7 +4,10 @@
 // Or:    bun run img /path/to/screenshot.png renamed.png
 
 import { copyFileSync, existsSync, mkdirSync } from "fs";
-import { resolve, basename, extname } from "path";
+import { resolve, basename, extname, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 const src = process.argv[2];
 const overrideName = process.argv[3];
@@ -20,7 +23,7 @@ if (!existsSync(src)) {
   process.exit(1);
 }
 
-const imagesDir = resolve(import.meta.dir, "..", "public", "images");
+const imagesDir = resolve(scriptDir, "..", "public", "images");
 if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
 
 const ext = extname(src).toLowerCase();

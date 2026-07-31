@@ -4,7 +4,10 @@
 // Requires: ANTHROPIC_API_KEY env var
 
 import { readFileSync, writeFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 const topic = process.argv.slice(2).join(" ").trim();
 if (!topic) {
@@ -110,7 +113,7 @@ if (!Array.isArray(slides) || slides.length < 5) {
   process.exit(1);
 }
 
-const slidesPath = resolve(import.meta.dir, "..", "src", "slides.ts");
+const slidesPath = resolve(scriptDir, "..", "src", "slides.ts");
 const current = readFileSync(slidesPath, "utf-8");
 
 const defaultsBlock = current.split("export const SLIDES")[0];

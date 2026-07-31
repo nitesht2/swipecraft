@@ -2019,6 +2019,11 @@ export default function CarouselPage() {
 
   const activeProject = projects.find((p) => p.id === activeId);
 
+  // Project drawer. Only has an effect under the mobile breakpoint in globals.css;
+  // on desktop the sidebar is always visible and this stays inert.
+  // Starts false on both server and client, so there is nothing to mismatch on hydration.
+  const [navOpen, setNavOpen] = useState(false);
+
   // Stats / analytics modal
   const [showStats, setShowStats] = useState(false);
 
@@ -2470,13 +2475,29 @@ export default function CarouselPage() {
   return (
     <CanvasSizeContext.Provider value={{ w: canvasW, h: canvasH }}>
     <FontScaleContext.Provider value={fontScale}>
-    <div suppressHydrationWarning style={{ minHeight: "100vh", display: "flex" }}>
+    <div suppressHydrationWarning className="sc-shell" style={{ minHeight: "100vh", display: "flex" }}>
+      {/* Drawer toggle + backdrop. Both are display:none above the mobile breakpoint. */}
+      <button
+        className="sc-menu-btn tb-btn"
+        onClick={() => setNavOpen((v) => !v)}
+        aria-label={navOpen ? "Close projects" : "Open projects"}
+        aria-expanded={navOpen}
+      >
+        {navOpen ? "✕" : "☰"}
+      </button>
+      <div
+        className="sc-backdrop"
+        data-open={navOpen}
+        onClick={() => setNavOpen(false)}
+        aria-hidden="true"
+      />
+
       {/* ---- Project Sidebar ---- */}
-      <aside style={{ width: 248, flexShrink: 0, borderRight: "1px solid #E2DACB", background: "#FBF8F2", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 10, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+      <aside className="sc-sidebar" data-open={navOpen} style={{ width: 248, flexShrink: 0, borderRight: "1px solid #E2DACB", background: "#FBF8F2", padding: "20px 14px", display: "flex", flexDirection: "column", gap: 10, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 6px" }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: "#8A8378", letterSpacing: "0.08em", textTransform: "uppercase" }}>Projects</span>
           <button
-            onClick={newProject}
+            onClick={() => { newProject(); setNavOpen(false); }}
             title="New carousel"
             className="tb-btn"
             style={{ width: 26, height: 26, borderRadius: 7, border: "none", background: "#E5683C", color: "#fff", cursor: "pointer", fontSize: 16, fontWeight: 700, lineHeight: 1 }}
@@ -2491,7 +2512,7 @@ export default function CarouselPage() {
             {inbox.map((item) => (
               <button
                 key={item.id}
-                onClick={() => importFromInbox(item)}
+                onClick={() => { importFromInbox(item); setNavOpen(false); }}
                 className="tb-btn"
                 title={`Import "${item.name}" as a new project`}
                 style={{ textAlign: "left", padding: "7px 9px", borderRadius: 7, border: "1px solid #E2DACB", background: "#fff", cursor: "pointer" }}
@@ -2509,7 +2530,7 @@ export default function CarouselPage() {
             return (
               <div
                 key={p.id}
-                onClick={() => switchProject(p.id)}
+                onClick={() => { switchProject(p.id); setNavOpen(false); }}
                 style={{
                   borderRadius: 10,
                   padding: "10px 10px 8px",
@@ -2554,11 +2575,11 @@ export default function CarouselPage() {
       </aside>
 
       {/* ---- Main column ---- */}
-      <div style={{ flex: 1, minWidth: 0, padding: 32 }}>
+      <div className="sc-main" style={{ flex: 1, minWidth: 0, padding: 32 }}>
       {/* Toolbar */}
       <div style={{ marginBottom: 32, background: "#FBF8F2", border: "1px solid #E2DACB", borderRadius: 16, padding: 24, boxShadow: "0 1px 3px rgba(26,23,20,0.06)" }}>
         {/* Title + Export + Lang toggle */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
+        <div className="sc-titlebar" style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: "#E5683C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, fontFamily: "var(--font-playfair)" }}>S</div>
             <div>
@@ -2568,7 +2589,7 @@ export default function CarouselPage() {
               </div>
             </div>
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="sc-actions" style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={openKeySettings} title="API keys for AI generation" style={{ padding: "8px 16px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "transparent", color: "#2E2A24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} className="tb-btn">
               🔑 Keys
             </button>
@@ -2663,9 +2684,9 @@ export default function CarouselPage() {
 
           {activeTab === "content" && (<>
           {/* AI Generate + Library */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="sc-genrow" style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 11, color: "#8A8378", width: 90, flexShrink: 0 }}>AI Generate</span>
-            <div style={{ display: "flex", gap: 8, flex: 1, maxWidth: 720, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 8, flex: 1, minWidth: 0, maxWidth: 720, alignItems: "center", flexWrap: "wrap" }}>
               <input
                 type="text"
                 value={genTopic}
@@ -2673,7 +2694,7 @@ export default function CarouselPage() {
                 onKeyDown={(e) => { if (e.key === "Enter") generateWithAI(); }}
                 placeholder='Topic, e.g. "5 ChatGPT prompts for job hunting"'
                 disabled={generating}
-                style={{ flex: 1, padding: "9px 14px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "#FFFFFF", color: "#1A1714", fontSize: 13, outline: "none" }}
+                style={{ flex: "1 1 180px", minWidth: 0, padding: "9px 14px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "#FFFFFF", color: "#1A1714", fontSize: 13, outline: "none" }}
               />
               <button
                 onClick={generateWithAI}
