@@ -7,6 +7,7 @@ import { FONT_STYLES, SURFACES, ACCENTS, composePreset, FORMAT_PRESETS } from ".
 import { SLIDES, DEFAULT_FONT, DEFAULT_SURFACE, DEFAULT_ACCENT, DEFAULT_PURPOSE, DEFAULT_BG, DEFAULT_FORMAT } from "../slides";
 import { BRAND } from "../brand";
 import { loadUserKeys, saveUserKeys, maskKey, PROVIDERS, PROVIDER_LABEL, PROVIDER_HINT, PROVIDER_PLACEHOLDER, type UserKeys } from "../lib/userKeys";
+import { VOICES, DEFAULT_VOICE, type VoiceId } from "../lib/voices";
 
 function BrandFooter({ preset }: { preset: StylePreset }) {
   if (!BRAND.showFooter) return null;
@@ -1815,6 +1816,7 @@ const CURRENT_KEY = "qsc-current";
 const PROJECTS_KEY = "qsc-projects";
 const ACTIVE_KEY = "qsc-active-id";
 const STYLE_KEY = "qsc-style";
+const VOICE_KEY = "swipecraft:voice";
 
 // Style is global (shared across every project), not per-carousel — matching
 // how it behaves today. Each field falls back to its DEFAULT_* constant if
@@ -2068,6 +2070,9 @@ export default function CarouselPage() {
 
   // AI generation
   const [genTopic, setGenTopic] = useState("");
+  // Which brand voice the AI writes in. Starts at the default on both server
+  // and client; the saved choice is restored after hydration, like the style.
+  const [voiceId, setVoiceId] = useState<VoiceId>(DEFAULT_VOICE);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const generateWithAI = useCallback(async () => {
@@ -2079,7 +2084,7 @@ export default function CarouselPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, keys: loadUserKeys() }),
+        body: JSON.stringify({ topic, voice: voiceId, keys: loadUserKeys() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -2090,7 +2095,7 @@ export default function CarouselPage() {
     } finally {
       setGenerating(false);
     }
-  }, [genTopic, generating]);
+  }, [genTopic, generating, voiceId]);
 
   // A/B hook generator
   type HookVariant = { text: string; highlight?: string; style?: string };
@@ -2103,7 +2108,7 @@ export default function CarouselPage() {
     setGenError("");
     setHookVariants(null);
     try {
-      const res = await fetch("/api/hooks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, keys: loadUserKeys() }) });
+      const res = await fetch("/api/hooks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, voice: voiceId, keys: loadUserKeys() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setHookVariants(data.hooks);
@@ -2112,7 +2117,7 @@ export default function CarouselPage() {
     } finally {
       setHooking(false);
     }
-  }, [genTopic, hooking]);
+  }, [genTopic, hooking, voiceId]);
   const applyHook = useCallback((h: HookVariant) => {
     setSlides((prev) => {
       const next = [...prev];
@@ -2182,6 +2187,21 @@ export default function CarouselPage() {
       localStorage.setItem(STYLE_KEY, JSON.stringify({ fontId, surfaceId, accentId, bgType }));
     } catch {}
   }, [hydrated, fontId, surfaceId, accentId, bgType]);
+
+  // Voice lives in its own key: it is a content choice, not a visual style,
+  // and clearing one should not wipe the other.
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const saved = localStorage.getItem(VOICE_KEY);
+      if (saved && saved in VOICES) setVoiceId(saved as VoiceId);
+    } catch {}
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try { localStorage.setItem(VOICE_KEY, voiceId); } catch {}
+  }, [hydrated, voiceId]);
   const [fontScale, setFontScale] = useState<number>(1.0);
   const [slideScales, setSlideScales] = useState<Record<number, number>>({});
   const [slideAligns, setSlideAligns] = useState<Record<number, AlignT>>({});
@@ -2704,6 +2724,17 @@ export default function CarouselPage() {
               >
                 {generating ? "Writing..." : "✦ Generate"}
               </button>
+              <select
+                value={voiceId}
+                onChange={(e) => setVoiceId(e.target.value as VoiceId)}
+                title={VOICES[voiceId].hint}
+                aria-label="Brand voice"
+                style={{ padding: "9px 10px", minHeight: 36, borderRadius: 8, border: "1px solid #D8D0C0", background: "#FFFFFF", color: "#2E2A24", cursor: "pointer", fontSize: 13, fontWeight: 600, maxWidth: 190 }}
+              >
+                {Object.values(VOICES).map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
               <button
                 onClick={generateHooks}
                 disabled={hooking || !genTopic.trim()}

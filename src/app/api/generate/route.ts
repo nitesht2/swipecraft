@@ -1,57 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { noKeyMessage, readUserKeys, resolveKey } from "@/lib/keys";
+import { resolveVoice, slidesSystemPrompt, type Voice } from "@/lib/voices";
 
 // Server-side LLM call. Keys come from the caller's browser (BYOK) or, when
 // BYOK_ONLY is off, from .env.local. Provider order:
 //   1. OpenRouter (default model: x-ai/grok-4.3, override with OPENROUTER_MODEL)
 //   2. Anthropic (claude-sonnet-4-6)
 
-const BRAND_GUIDE = `
-Brand: @quad_star — TikTok channel for AI tools and prompts that save time.
-Voice: direct, actionable. No fluff. Specific outcomes. Numbers where possible.
-No em dashes. No buzzwords (streamline/unleash/supercharge/transform/leverage/game-changer).
-Audience: AI-curious general users discovered via TikTok algo, not engineers.
-`;
-
-const SYSTEM = `You are a TikTok carousel content writer for @quad_star.
-
-${BRAND_GUIDE}
-
-Generate exactly 7 slides as VALID JSON matching this schema:
-
-[
-  {
-    "type": "hook",
-    "text": "Catchy headline\\nwith line breaks",
-    "highlight": "key phrase",
-    "highlightStyle": "italic-box"
-  },
-  {
-    "type": "body",
-    "title": "1. SHORT TITLE",
-    "text": "Body copy with\\nline breaks.\\n\\nMax 5 lines.",
-    "highlight": "key phrase"
-  },
-  ... 4 more body slides (titles numbered 2-5) ...
-  {
-    "type": "cta",
-    "text": "Reveal or close.\\nAction line.\\n\\nFollow ↓",
-    "highlight": "key word",
-    "highlightStyle": "italic-box",
-    "handle": "@quad_star"
-  }
-]
-
-Rules:
-- Hook: max 30 words, 3 short lines, payoff first, number where possible
-- Body slides: one idea each, max 40 words, max 5 lines
-- highlight must appear VERBATIM inside that slide's text or title
-- Use \\n for line breaks
-- If the topic implies a reveal (tool/repo name), keep the name out of slides 1-6 and reveal in the CTA
-- Only claim facts present in the topic brief; do not invent stats
-- Return JSON ONLY. No markdown fences. No commentary.`;
-
-async function callOpenRouter(apiKey: string, topic: string): Promise<string> {
+async function callOpenRouter(apiKey: string, topic: string, voice: Voice): Promise<string> {
   const model = process.env.OPENROUTER_MODEL || "x-ai/grok-4.3";
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -65,7 +21,7 @@ async function callOpenRouter(apiKey: string, topic: string): Promise<string> {
       model,
       max_tokens: 4096,
       messages: [
-        { role: "system", content: SYSTEM },
+        { role: "system", content: slidesSystemPrompt(voice) },
         { role: "user", content: `Topic: ${topic}\n\nGenerate the 7-slide carousel JSON.` },
       ],
     }),
@@ -75,7 +31,7 @@ async function callOpenRouter(apiKey: string, topic: string): Promise<string> {
   return data.choices?.[0]?.message?.content || "";
 }
 
-async function callAnthropic(apiKey: string, topic: string): Promise<string> {
+async function callAnthropic(apiKey: string, topic: string, voice: Voice): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -86,7 +42,7 @@ async function callAnthropic(apiKey: string, topic: string): Promise<string> {
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
-      system: SYSTEM,
+      system: slidesSystemPrompt(voice),
       messages: [{ role: "user", content: `Topic: ${topic}\n\nGenerate the 7-slide carousel JSON.` }],
     }),
   });
@@ -107,6 +63,7 @@ export async function POST(req: NextRequest) {
   if (!topic) {
     return NextResponse.json({ error: "Topic is required" }, { status: 400 });
   }
+  const voice = resolveVoice((body as { voice?: unknown })?.voice);
 
   const userKeys = readUserKeys(body);
   const orKey = resolveKey("openrouter", userKeys);
@@ -117,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   let raw: string;
   try {
-    raw = orKey ? await callOpenRouter(orKey, topic) : await callAnthropic(antKey!, topic);
+    raw = orKey ? await callOpenRouter(orKey, topic, voice) : await callAnthropic(antKey!, topic, voice);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }
@@ -125,7 +82,13 @@ export async function POST(req: NextRequest) {
   raw = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
   try {
-    const slides = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Models routinely wrap the array in an object even when told not to
+    // ({"slides": [...]}, sometimes {"carousel": [...]}). The payload is fine,
+    // so unwrap a lone array-valued property rather than failing the request.
+    const slides = Array.isArray(parsed)
+      ? parsed
+      : Object.values(parsed ?? {}).find(Array.isArray);
     if (!Array.isArray(slides) || slides.length < 3) {
       return NextResponse.json({ error: "Model returned unexpected shape", raw }, { status: 502 });
     }
