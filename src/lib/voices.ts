@@ -1,33 +1,40 @@
 // ============================================================
 // Brand voices for AI generation.
 //
-// Mirrors the layered system in ~/.voice: craft rules that apply to
-// everything Nitesh publishes live in UNIVERSAL_RULES, and each voice
-// adds only what changes — who is speaking, to whom, and in what
-// register. A voice never removes a universal rule.
+// Voices are named by REGISTER, not by brand, so the defaults are useful
+// to anyone: short-form, professional, builder. Each ships a generic
+// guide good enough to produce sane output from a clean clone.
 //
-// Source of truth for the craft rules is ~/.voice/03-universal-rules.md.
-// This is a distillation sized for a system prompt, not a replacement.
-// If that file changes materially, update UNIVERSAL_RULES to match.
+// To write in your own brand voice without committing it, point
+// SWIPECRAFT_VOICES at a JSON file (see .env.example). Its handle and
+// guide values replace the defaults at request time. That file is read
+// server-side only, which is why the loader lives in voicesServer.ts —
+// this module is imported by the browser and must stay free of fs.
 // ============================================================
 
-export type VoiceId = "quadstar-tiktok" | "quadstar-linkedin" | "niteshtech";
+export type VoiceId = "shortform" | "professional" | "builder";
 
 export interface Voice {
   id: VoiceId;
-  /** Shown in the picker. */
+  /** Shown in the picker. Describes the register, never a specific brand. */
   name: string;
-  /** One-line hint under the picker. */
+  /** Tooltip under the picker. */
   hint: string;
-  /** Stamped on the CTA slide. */
+  /** Stamped on the CTA slide. Override per brand via SWIPECRAFT_VOICES. */
   handle: string;
-  /** What changes for this voice. Appended after UNIVERSAL_RULES. */
+  /** Who is speaking, to whom, in what register. Appended after the craft rules. */
   guide: string;
 }
 
-export const DEFAULT_VOICE: VoiceId = "quadstar-tiktok";
+export const DEFAULT_VOICE: VoiceId = "shortform";
 
-/** Craft rules every voice inherits. Kept tight; this ships on every request. */
+/**
+ * Craft rules every voice inherits, shipped on every request.
+ *
+ * These are reader-facing anti-slop rules: they stop a human who knows the
+ * patterns from thinking a machine wrote it. They are not an AI-detector
+ * countermeasure, and should not be sold as one.
+ */
 const UNIVERSAL_RULES = `
 CRAFT RULES (apply to every slide, no exceptions):
 - No em dashes. No semicolons. Commas and periods only.
@@ -53,61 +60,51 @@ CRAFT RULES (apply to every slide, no exceptions):
 `.trim();
 
 export const VOICES: Record<VoiceId, Voice> = {
-  // The original prompt this app shipped with. Unchanged on purpose so the
-  // default keeps producing what it always produced.
-  "quadstar-tiktok": {
-    id: "quadstar-tiktok",
-    name: "Quad Star · TikTok",
-    hint: "AI tools and prompts, for a general TikTok audience",
-    handle: "@quad_star",
+  shortform: {
+    id: "shortform",
+    name: "Short-form · TikTok",
+    hint: "Punchy, for a general feed audience with no assumed background",
+    handle: "@yourhandle",
     guide: `
-Brand: @quad_star, a TikTok channel about AI tools and prompts that save time.
-Audience: AI-curious general users who found this through the algorithm. Not engineers.
-Register: direct and actionable. No fluff. Specific outcomes. Numbers where possible.
-Assume no technical background. Name the tool, say what it does, say what it saves.
+Audience: general users who found this through an algorithm, not specialists.
+Assume no technical background.
+Register: direct and actionable. No fluff. Specific outcomes. Numbers where
+possible. Name the thing, say what it does, say what it saves.
+Every slide has to earn the next swipe.
 `.trim(),
   },
 
-  // Same brand, but a LinkedIn document post is read by professionals at work
-  // and sits on a company page rather than a personal feed.
-  "quadstar-linkedin": {
-    id: "quadstar-linkedin",
-    name: "Quadstar · LinkedIn",
-    hint: "Same AI/tech beat, written for the LinkedIn company page",
-    handle: "Quadstar",
+  professional: {
+    id: "professional",
+    name: "Professional · LinkedIn",
+    hint: "Credible and plain, for people reading at their desk",
+    handle: "Your Company",
     guide: `
-Brand: Quadstar, a LinkedIn company page covering AI and technology.
-Audience: working professionals, analysts, and operators reading at their desk.
-They care what a tool changes about their actual job, not that it exists.
-Register: plain and credible. Confident without shouting. No TikTok punchiness,
-no all-caps, no hype. Where the TikTok voice would say "this is insane", state
-the fact and let it land.
-Every carousel should leave the reader able to do something differently on Monday.
-Slides can carry slightly denser lines than a vertical video format, but stay
-inside the word limits below.
-Never write "@" before the handle on the CTA slide. The page is called Quadstar.
+Audience: working professionals and operators reading at their desk. They care
+what a tool changes about their actual job, not that it exists.
+Register: plain and credible. Confident without shouting. No all-caps, no hype.
+Where a short-form voice would say "this is insane", state the fact and let it
+land.
+Leave the reader able to do something differently on Monday.
+On this platform the handle is a page or company name, so do not prefix it
+with an @ on the CTA slide.
 `.trim(),
   },
 
-  // Nitesh's personal builder brand. Distilled from ~/.voice 01, 02, 03, 05.
-  niteshtech: {
-    id: "niteshtech",
-    name: "NiteshTechAI · X",
-    hint: "Nitesh's own builder voice, blunt and receipts-first",
-    handle: "@NiteshTechAI",
+  builder: {
+    id: "builder",
+    name: "Builder · X",
+    hint: "Blunt and receipts-first, for people shipping their own work",
+    handle: "@yourhandle",
     guide: `
-Brand: @NiteshTechAI. Nitesh writes as a builder-marketer at the intersection of
-AI, data, and commerce. Technical chops, analytical training, business literacy,
-selling instinct. He ships things and shows the receipts.
-Audience: individual operators who want to use AI to ship real products and build
-income outside a W-2. Write for him-from-six-months-ago.
+Audience: individual operators and builders who want to ship real things.
+Write for the reader as they were six months ago.
 
-Every carousel must be all three: useful, actionable, and non-obvious. If it fails
-one, it is the wrong carousel.
+Every carousel must be all three: useful, actionable, and non-obvious. If it
+fails one, it is the wrong carousel.
 
-Register: full directness. This is the platform the blunt voice was built for.
-Correction framing lands here ("Most people think X. Actually Y."). No throat
-clearing, no warm-up. Say the thing.
+Register: full directness. No throat clearing, no warm-up. Correction framing
+lands here ("Most people think X. Actually Y."). Say the thing.
 
 Excitement shows up as specifics, never volume. A cost number does the work an
 exclamation point cannot. Skepticism is a feature: if a tool is overhyped, say so.
@@ -119,9 +116,8 @@ Include at least one human signal across the seven slides:
 - a scoped "I have only tested X" limitation
 - a changed opinion ("I used to think X. I was wrong.")
 
-He stands against AI hype with no shipped product, consultants selling what they
-never built, and "10X your output" claims with no receipts. Never write like them.
-Never produce hype-title energy, performative humility, or fake vulnerability.
+Never produce hype-title energy, performative humility, or claims with no
+receipts behind them.
 `.trim(),
   },
 };

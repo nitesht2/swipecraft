@@ -2,7 +2,7 @@
 
 > A short-form carousel studio for TikTok / Instagram Reels / YouTube Shorts. Platform-safe layout, tabbed in-browser editor, per-slide typography + alignment, AI content generation, carousel library, and one-click ZIP export.
 
-Built for [@quad_star](https://www.tiktok.com/@quad_star) — AI tools and prompts channel.
+Self-hosted, no accounts, no database. Your carousels live in your browser.
 
 ![Format](https://img.shields.io/badge/format-9:16%20vertical-E5683C)
 ![Stack](https://img.shields.io/badge/stack-Next.js%2015%20%2B%20Bun-black)
@@ -97,7 +97,7 @@ There is still no per-user rate limiting, so put the deployment behind your host
 
 Carousels are stored per browser in localStorage. There are no accounts and no database, so each visitor's projects stay on their own machine.
 
-**Mobile:** the editor layout is desktop-only right now. Phone users will land on a broken view.
+**Mobile:** the editor is responsive. Below 900px the project sidebar becomes a drawer. The app also ships a web manifest and service worker, so a hosted instance can be installed to a phone home screen and opened offline.
 
 ---
 
@@ -147,7 +147,7 @@ Top-level controls (apply to all slides):
 | **Safe Zones** | Toggle TikTok / IG / YT UI overlay debug layer |
 | **Font Size** | Global slider 0.5x ↔ 2.0x + reset |
 | **Font** | Minimal / Editorial / Clean / Mono / Condensed |
-| **Surface** | 8 backgrounds (Dark, White, Light, Paper, Gradient, Pastel, Neon, Ember) |
+| **Surface** | 12 backgrounds (Dark, White, Light, Paper, Gradient, Pastel, Neon, Ember, plus Mocha, Latte, Rosé Pine and Nord adapted from their MIT palettes) |
 | **Accent** | 11 pop colors |
 | **Background** | None, Blobs, Grid, Lines, Ruled, Noise, Bignumber, Glow |
 
@@ -170,18 +170,40 @@ Final font size = `global slider × per-slide × (data.fontScale override)`
 
 ## Brand Config
 
-`src/brand.ts` — single source of truth for handle, tagline, footer behavior:
+The footer on every slide and the handle stamped on CTA slides come from `src/brand.ts`, which reads `.env.local` so your own brand never lands in version control:
 
-```ts
-export const BRAND = {
-  name: "Quad Star",
-  handle: "@quad_star",
-  logoSrc: "",
-  showFooter: true,         // handle + tagline at bottom of every slide
-  showPageNumbers: false,   // counter dots
-  tagline: "AI prompts + tools that actually work.",
-};
+```bash
+NEXT_PUBLIC_BRAND_NAME=Your Brand
+NEXT_PUBLIC_BRAND_HANDLE=@yourhandle
+NEXT_PUBLIC_BRAND_TAGLINE=Your one-line tagline.
+NEXT_PUBLIC_BRAND_LOGO=/images/logo.png   # optional
+NEXT_PUBLIC_BRAND_SHOW_FOOTER=1
+NEXT_PUBLIC_BRAND_SHOW_PAGE_NUMBERS=0
 ```
+
+These are inlined into the client bundle at build time, so keep secrets out of them. Unset values fall back to neutral placeholders.
+
+## Brand Voices
+
+AI generation ships three voices, named by register rather than by brand: **Short-form** (punchy, general feed), **Professional** (plain and credible, desk audience), and **Builder** (blunt, receipts-first). Pick one next to the Generate button, or pass `--voice builder` to the CLI generator.
+
+Each carries a shared set of craft rules: banned buzzwords and hedges, banned constructions (negative parallelism, rule of three, rhetorical Q&A, false suspense), and a hard rule against inventing statistics.
+
+To write in your own brand voice without committing it, point `SWIPECRAFT_VOICES` at a JSON file:
+
+```bash
+SWIPECRAFT_VOICES=/path/to/voices.json
+```
+
+```json
+{
+  "shortform":    { "handle": "@yourhandle", "guide": "Who is speaking, to whom, in what register." },
+  "professional": { "handle": "Your Page",   "guide": "..." },
+  "builder":      { "handle": "@yourhandle", "guide": "..." }
+}
+```
+
+Only `handle` and `guide` are read, and only server-side. Picker labels stay fixed so the browser always matches what the server used. A missing or malformed file logs a warning and falls back to the built-in voices.
 
 Footer renders automatically on every slide unless `showFooter: false`.
 
@@ -237,7 +259,7 @@ Example:
   text: "It is Hermes Agent.\nBy Nous Research.\n\nFree. Open source.\n\nFollow ↓",
   highlight: "Hermes Agent",
   highlightStyle: "italic-box",
-  handle: "@quad_star",
+  handle: "@yourhandle",
 }
 ```
 
@@ -322,15 +344,3 @@ Swipecraft is built on the shoulders of open source. With gratitude:
 ## License
 
 MIT. The original engine is MIT-licensed and that license is preserved in [`LICENSE`](./LICENSE). Swipecraft's additions are also released under MIT. Fork it, ship it.
-
----
-
-## Posted Carousels
-
-| # | Topic | Format | Date |
-|---|---|---|---|
-| 001 | 5 ChatGPT prompts that save 5 hours/week | Pastel + Violet | 2026-06-07 |
-| 002 | 5 free AI tools that replaced $200/mo software | Pastel + Violet | 2026-06-07 |
-| 003 | I let AI run my workday | Pastel + Violet | 2026-06-07 |
-| 004 | 5 reasons I switched from ChatGPT to Claude | Pastel + Violet | 2026-06-07 |
-| 005 | Hermes Agent reveal — runs while you sleep | Pastel + Violet | 2026-06-08 |

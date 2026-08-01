@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { noKeyMessage, readUserKeys, resolveKey } from "@/lib/keys";
-import { resolveVoice, slidesSystemPrompt, type Voice } from "@/lib/voices";
+import { slidesSystemPrompt, type Voice } from "@/lib/voices";
+import { resolveVoiceWithOverrides } from "@/lib/voicesServer";
 
 // Server-side LLM call. Keys come from the caller's browser (BYOK) or, when
 // BYOK_ONLY is off, from .env.local. Provider order:
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
   if (!topic) {
     return NextResponse.json({ error: "Topic is required" }, { status: 400 });
   }
-  const voice = resolveVoice((body as { voice?: unknown })?.voice);
+  const voice = resolveVoiceWithOverrides((body as { voice?: unknown })?.voice);
 
   const userKeys = readUserKeys(body);
   const orKey = resolveKey("openrouter", userKeys);

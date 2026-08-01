@@ -42,7 +42,7 @@ export const SLIDES: SlideData[] = [
     text: "Odysseus.\nFree on GitHub.\n\n27,000 stars\nin 7 days.\n\nFollow ↓",
     highlight: "Odysseus",
     highlightStyle: "italic-box",
-    handle: "@quad_star",
+    handle: "@yourhandle",
   },
 ];
 

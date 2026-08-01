@@ -6,10 +6,11 @@
 import { readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { DEFAULT_VOICE, resolveVoice, slidesSystemPrompt } from "../src/lib/voices";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-const topic = process.argv.slice(2).join(" ").trim();
+const topic = process.argv.slice(2).filter((a) => !a.startsWith("--")).join(" ").trim();
 if (!topic) {
   console.error("Usage: bun run new \"<topic>\"");
   console.error("Example: bun run new \"5 AI tools for students\"");
@@ -23,49 +24,11 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const BRAND_GUIDE = `
-Brand: @quad_star — TikTok channel for AI tools and prompts that save time.
-Voice: direct, actionable, Hormozi-hook style. No fluff. Specific outcomes.
-No em dashes. No filler. No "amazing/transform/unleash" buzzwords.
-Audience: general AI-curious users, not engineers.
-Format: 7-slide carousel.
-`;
-
-const SYSTEM = `You are a TikTok carousel content writer for @quad_star.
-
-${BRAND_GUIDE}
-
-Generate exactly 7 slides as VALID JSON matching this schema:
-
-[
-  {
-    "type": "hook",
-    "text": "Catchy headline\\nwith line breaks",
-    "highlight": "key phrase",
-    "highlightStyle": "italic-box"
-  },
-  {
-    "type": "body",
-    "title": "SLIDE TITLE IN CAPS",
-    "text": "Body copy with\\nline breaks.\\n\\nMax 5 lines.",
-    "highlight": "key phrase"
-  },
-  // ... 5 body slides total
-  {
-    "type": "cta",
-    "text": "Save this.\\nTap screenshot.\\nUse Monday.",
-    "handle": "@quad_star"
-  }
-]
-
-Rules:
-- Hook slide: lead with the payoff (the WIN), highlight the number/result
-- 5 body slides: one idea each, max 40 words
-- CTA: behavioral (save/screenshot/follow), end with @quad_star handle
-- Use \\n for line breaks
-- highlight should be a phrase that appears verbatim in text or title
-- No em dashes, no buzzwords
-- Return JSON ONLY, no markdown fences, no commentary`;
+// Reuse the same voices the app uses, so CLI and UI stay in sync.
+// Pick one with: bun run new "topic" --voice builder
+const voiceArg = process.argv.find((a) => a.startsWith("--voice="))?.split("=")[1];
+const voice = resolveVoice(voiceArg ?? DEFAULT_VOICE);
+const SYSTEM = slidesSystemPrompt(voice);
 
 console.log(`\nGenerating carousel for: "${topic}"\n`);
 

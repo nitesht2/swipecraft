@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { noKeyMessage, readUserKeys, resolveKey, type UserKeys } from "@/lib/keys";
-import { hooksSystemPrompt, resolveVoice, type Voice } from "@/lib/voices";
+import { hooksSystemPrompt, type Voice } from "@/lib/voices";
+import { resolveVoiceWithOverrides } from "@/lib/voicesServer";
 
 // Returns 3 distinct hook-slide variants for A/B testing.
 // Same key resolution as /api/generate (OpenRouter preferred, Anthropic fallback).
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     topic = String((body as { topic?: unknown })?.topic || "").trim();
   } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
   if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
-  const voice = resolveVoice((body as { voice?: unknown })?.voice);
+  const voice = resolveVoiceWithOverrides((body as { voice?: unknown })?.voice);
 
   const userKeys = readUserKeys(body);
   if (!resolveKey("openrouter", userKeys) && !resolveKey("anthropic", userKeys)) {
