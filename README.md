@@ -345,4 +345,4 @@ Swipecraft is built on the shoulders of open source. With gratitude:
 
 MIT, see [`LICENSE`](./LICENSE).
 
-Swipecraft is a derivative work of [itchernetski/threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill), which is MIT-licensed. That project's copyright is retained in `LICENSE` alongside this one, as MIT requires. Additions made in Swipecraft are released under the same terms. Fork it, ship it.
+Swipecraft is a derivative work of [threads-carousel-claude-skill](https://github.com/itchernetski/threads-carousel-claude-skill) by Ilya Chernetskiy, which is MIT-licensed. That copyright notice is retained in `LICENSE` alongside this one, as MIT requires. Additions made in Swipecraft are released under the same terms. Fork it, ship it.
